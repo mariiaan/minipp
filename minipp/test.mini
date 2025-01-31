@@ -1,0 +1,10 @@
+[profile]
+dock_outliner="left"
+window_width=1000000b
+window_height=fh
+
+[profile.marian]
+dock_outliner="ri\\ght\\"
+
+[profile.toyb]
+dock_outliner="top"
