@@ -165,6 +165,10 @@ namespace minipp
 		public:
 			std::vector<std::string>& GetComments() noexcept { return m_comments; }
 			const std::vector<std::string>& GetComments() const noexcept { return m_comments; }
+			std::unordered_map<std::string, Value*>& GetValues() noexcept { return m_values; }
+			const std::unordered_map<std::string, Value*>& GetValues() const noexcept { return m_values; }
+			std::unordered_map<std::string, Section*>& GetSubSections() noexcept { return m_subSections; }
+			const std::unordered_map<std::string, Section*>& GetSubSections() const noexcept { return m_subSections; }
 
 		public:
 			Section() = default;
@@ -177,16 +181,20 @@ namespace minipp
 			EResult GetValue(const std::string& key, ValueDataType** target) noexcept
 			{
 				static_assert(std::is_base_of<Value, ValueDataType>::value, "ValueDataType must be a subclass of Value");
+
 				int64_t firstSeparatorIndex = Tools::FirstIndexOf(key, '.');
 				if (firstSeparatorIndex != -1)
 				{
 					std::string thisKey = key.substr(0, firstSeparatorIndex);
 					std::string rest = key.substr(firstSeparatorIndex + 1);
+
 					auto it = m_subSections.find(thisKey);
 					if (it == m_subSections.end())
 						return EResult::SectionNotPresent;
+
 					return it->second->GetValue(rest, target);
 				}
+
 				auto it = m_values.find(key);
 				if (it == m_values.end())
 					return EResult::KeyNotPresent;
@@ -203,6 +211,7 @@ namespace minipp
 			EResult SetValue(const std::string& name, std::unique_ptr<ValueDataType> value, bool allowOverwrite = false) noexcept
 			{
 				static_assert(std::is_base_of<Value, ValueDataType>::value, "ValueDataType must be a subclass of Value");
+
 				if (m_values.find(name) != m_values.end())
 					if (!allowOverwrite)
 						return EResult::KeyAlreadyPresent;
@@ -280,6 +289,7 @@ namespace minipp
 minipp::EResult minipp::MiniPPFile::Values::StringValue::Parse(const std::string& str) noexcept
 {
 	m_value = "";
+
 	for (size_t i = 0; i < str.size(); ++i)
 	{
 		if (str[i] == '\\')
@@ -318,12 +328,14 @@ minipp::EResult minipp::MiniPPFile::Values::StringValue::Parse(const std::string
 		else
 			m_value.push_back(str[i]);
 	}
+
 	return EResult::Success;
 }
 
 minipp::EResult minipp::MiniPPFile::Values::StringValue::ToString(std::string& destination) const noexcept
 {
 	std::string sanitizedValue = m_value;
+
 	for (size_t i = 0; i < sanitizedValue.size(); ++i)
 	{
 		switch (sanitizedValue[i])
@@ -478,11 +490,13 @@ minipp::EResult minipp::MiniPPFile::Values::FloatValue::ToString(std::string& de
 minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string& str) noexcept
 {
 	std::string nValue = str;
+
 	if (str.front() != '[' || str.back() != ']')
 	{
 		COUT("Array value must be enclosed in [] brackets.");
 		return EResult::FormatError;
 	}
+
 	nValue = str.substr(1, str.size() - 2);
 	if (nValue.empty())
 		return EResult::Success;
@@ -571,6 +585,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
 
 		m_values.push_back(std::move(parsed));
 	}
+
 	return EResult::Success;
 }
 
@@ -602,6 +617,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::ToString(std::string& de
 		valueString = valueString.substr(0, valueString.size() - 2);
 
 	destination = "[" + valueString + "]";
+
 	return EResult::Success;
 }
 
@@ -650,6 +666,7 @@ minipp::EResult minipp::MiniPPFile::Section::SetSubSection(const std::string& na
 			delete m_subSections[name];
 
 	m_subSections[name] = value.release();
+
 	return EResult::Success;
 }
 
@@ -733,6 +750,7 @@ minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::of
 		}
 		ofs << std::endl;
 	}
+
 	if (!partTreeName.empty())
 		partTreeName += ".";
 
@@ -891,6 +909,7 @@ bool minipp::MiniPPFile::Tools::StringStartsWith(const std::string& str, const s
 	for (size_t i = 0; i < beg.size(); ++i)
 		if (str[i] != beg[i])
 			return false;
+
 	return true;
 }
 
@@ -902,6 +921,7 @@ bool minipp::MiniPPFile::Tools::StringEndsWith(const std::string& str, const std
 	for (size_t i = 0; i < end.size(); ++i)
 		if (str[str.size() - i - 1] != end[end.size() - i - 1])
 			return false;
+
 	return true;
 }
 
@@ -909,6 +929,7 @@ void minipp::MiniPPFile::Tools::StringTrim(std::string& str)
 {
 	if (str.empty())
 		return;
+
 	size_t start = 0;
 	size_t end = str.size() - 1;
 	while (str[start] == ' ' || str[start] == '\t')
@@ -942,6 +963,7 @@ int64_t minipp::MiniPPFile::Tools::FirstIndexOf(const std::string& str, char c) 
 			return index;
 		++index;
 	}
+
 	return -1;
 }
 
@@ -954,6 +976,7 @@ int64_t minipp::MiniPPFile::Tools::LastIndexOf(const std::string& str, char c) n
 			return index;
 		--index;
 	}
+
 	return -1;
 }
 
@@ -980,6 +1003,7 @@ std::vector<std::string> minipp::MiniPPFile::Tools::SplitByDelimiter(const std::
 
 	if (!tmp.empty())
 		elements.push_back(tmp);
+
 	return elements;
 }
 
