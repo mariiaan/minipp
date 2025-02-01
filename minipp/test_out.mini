@@ -1,18 +1,19 @@
 [game]
 name = "Test Game"
+completionPercentage = 50.000000
 version = "1.0.0"
 year = 2025
-completionPercentage = 50.0f
 # Should only be true if completionPercentage is 100
 is_completed = false
 
 # This section is about
 # the settings of a game window
-[game.window]
+[window]
 dimensions = [1280, 720]
 close_flags = 101011b
-hex_test = DEADBEEFh
+hex_test = deadbeefh
 
-[game.window.platform]
+[platform]
 targets = ["win32", "macOS", "linux"]
 points = [[0, 0], [1, 0], [1, 1], [0, 1]]
+

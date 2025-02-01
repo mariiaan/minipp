@@ -1,22 +1,45 @@
+#define MINIPP_IMPLEMENTATION
 #include "minipp/minipp.hpp"
+
+using namespace minipp;
 
 int main()
 {
-	minipp::MiniPPFile file;
-	auto result = file.Parse("test.mini");
+	EResult result;
 
-	auto& section = file.GetRoot();
-	
-	minipp::MiniPPFile::Section* profileSection = section.GetSubSection("profile", &result);
+	MiniPPFile file;
+	result = file.Parse("test.mini");
 
-	minipp::MiniPPFile::IntValue* value;
-	auto result1 = profileSection->GetValue(&value, "window_width");
+	auto& root = file.GetRoot();
 
-	auto result2 = value->GetValue();
+	MiniPPFile::Section* gameSection = nullptr;
+	result = root.GetSubSection("game", &gameSection);
+	MiniPPFile::Values::StringValue* nameValue = nullptr;
+	result = gameSection->GetValue("name", &nameValue);
+	MiniPPFile::Values::IntValue* yearValue = nullptr;
+	result = gameSection->GetValue("year", &yearValue);
+	MiniPPFile::Values::FloatValue* completionPercentage = nullptr;
+	result = gameSection->GetValue("completionPercentage", &completionPercentage);
+	MiniPPFile::Values::BooleanValue* isCompleted = nullptr;
+	result = gameSection->GetValue("is_completed", &isCompleted);
 
-	auto marianProfile = section.GetSubSection("profile.marian", &result);
-	minipp::MiniPPFile::StringValue* dockOutlinerType;
-	marianProfile->GetValue(&dockOutlinerType, "dock_outliner");
+	MiniPPFile::Section* windowSection = nullptr;
+	result = gameSection->GetSubSection("window", &windowSection);
+	MiniPPFile::Values::ArrayValue* dimensionsValue = nullptr;
+	result = windowSection->GetValue("dimensions", &dimensionsValue);
+	MiniPPFile::Values::IntValue* closeFlags = nullptr;
+	result = windowSection->GetValue("close_flags", &closeFlags);
+	MiniPPFile::Values::StringValue* hexTest = nullptr;
+	result = windowSection->GetValue("hex_test", &hexTest);
+
+	MiniPPFile::Section* windowPlatformSection = nullptr;
+	result = gameSection->GetSubSection("window.platform", &windowPlatformSection);
+	MiniPPFile::Values::ArrayValue* targetsValue = nullptr;
+	result = windowPlatformSection->GetValue("targets", &targetsValue);
+	MiniPPFile::Values::ArrayValue* pointsValue = nullptr;
+	result = windowPlatformSection->GetValue("points", &pointsValue);
+
+	file.Write("test_out.mini");
 
 	return 0;
 }
