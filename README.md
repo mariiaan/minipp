@@ -1,6 +1,6 @@
 # minipp
 
-A lightweight, header-only C++14 parser and writer for the mini config format.
+A lightweight, header-only C++14 parser and writer for the [mini config format](https://github.com/ToyB-Chan/mini-file-format).
 
 ## Description
 minipp provides a convenient way to parse and write configuration files in the "mini" format. This format is characterized by its human-readable structure and nested sections, making it ideal for application configurations.
