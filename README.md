@@ -15,17 +15,6 @@ minipp provides a convenient way to parse and write configuration files in the "
   
 - **Single Header**: minipp is a single-header library, meaning you only need to include one file.
 
-## Usage
-
-To use minipp in your project:
-
-```cpp
-#define MINIPP_IMPLEMENTATION
-#include "minipp.hpp"
-```
-
-Then, you can use `minipp::MiniPPFile` to parse and write mini files throughout your code.
-
 ### Example Usage
 
 ```cpp
@@ -132,11 +121,11 @@ int main()
 
 ## Example
 
-An example mini file is contained in this [repository](test.mini). The full mini file format specilization can be found [here](https://github.com/ToyB-Chan/mini-file-format).
+An example mini file is contained in this [repository](minipp/test.mini). The full mini file format specilization can be found [here](https://github.com/ToyB-Chan/mini-file-format).
 
 ## Installation
 
-1. Copy the contents of "minipp.hpp" to a new file in your project.
+1. Copy the contents of [minipp.hpp](minipp/minipp.hpp) to a new file in your project.
 2. #Include "minipp.hpp" after defining MINIPP_IMPLEMENTATION in one single cpp file.
 3. #Include "minipp.hpp" in any other desired files without the IMPLEMENTATION define!
 
