@@ -24,7 +24,7 @@ namespace minipp
         FormatError                 = -7,
 		ArrayDataTypeInconsitency   = -8,
 
-        /* OK Codes*/
+        /* OK Codes */
         Success                     = +1,
         ValueOverwritten            = +2
     };
