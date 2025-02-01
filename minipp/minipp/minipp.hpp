@@ -197,7 +197,7 @@ namespace minipp
 
     private:
         static std::unique_ptr<Value> ParseValue(std::string value);
-        static minipp::EResult WriteSection(const Section* section, std::ofstream& ofs, const std::string& partTreeName) noexcept;
+        static minipp::EResult WriteSection(const Section* section, std::ofstream& ofs, std::string partTreeName) noexcept;
 
     public:
         EResult Parse(const std::string& path) noexcept;
@@ -695,7 +695,7 @@ std::unique_ptr<minipp::MiniPPFile::Value> minipp::MiniPPFile::ParseValue(std::s
     }
 }
 
-minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::ofstream& ofs, const std::string& partTreeName) noexcept
+minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::ofstream& ofs, std::string partTreeName) noexcept
 {
     if (section->m_values.size() > 0)
     {
@@ -719,6 +719,8 @@ minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::of
         }
         ofs << std::endl;
     }
+    if (!partTreeName.empty())
+		partTreeName += ".";
 
     for (const auto& pair : section->m_subSections)
     {
@@ -731,11 +733,8 @@ minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::of
 		for (const auto& comment : pair.second->m_comments)
 			ofs << comment << std::endl;
 
-        ofs << "[";
-        if (!partTreeName.empty())
-			ofs << partTreeName << ".";
-        ofs << pair.first << "]" << std::endl;
-        auto result = WriteSection(pair.second, ofs, (partTreeName.empty() ? "" : (partTreeName + ".")) + pair.first);
+        ofs << "[" << partTreeName << pair.first << "]" << std::endl;
+        auto result = WriteSection(pair.second, ofs, partTreeName + pair.first);
         if (!IsResultOk(result))
             return result;
     }
