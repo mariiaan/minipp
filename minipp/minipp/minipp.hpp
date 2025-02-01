@@ -6,9 +6,10 @@
 #include <utility>
 #include <vector>
 
+// enabled helpful debug messages via std::cout (for parsing and writing)
 #define MINIPP_ENABLE_DEBUG_OUTPUT true
 
-// define MINIPP_IMPLEMENTATION in one single translation unit before including this header!
+// define MINIPP_IMPLEMENTATION in a single translation unit before including this header!
 
 namespace minipp
 {
@@ -22,7 +23,7 @@ namespace minipp
         FileIOError                 = -5,
         InvalidDataType             = -6,
         FormatError                 = -7,
-		ArrayDataTypeInconsitency   = -8,
+		ArrayDataTypeInconsistency   = -8,
 
         /* OK Codes */
         Success                     = +1,
@@ -259,7 +260,10 @@ minipp::EResult minipp::MiniPPFile::Values::StringValue::Parse(const std::string
         if (str[i] == '\\')
         {
             if (i + 1 >= str.size())
+            {
+				COUT("Syntax error: '\\' at end of string");
                 return EResult::FormatError;
+            }
 
             switch (str[i + 1])
             {
@@ -279,6 +283,7 @@ minipp::EResult minipp::MiniPPFile::Values::StringValue::Parse(const std::string
                 m_value.push_back('\\');
                 break;
             default:
+				COUT("Syntax error: Unknown escape sequence '\\" << str[i + 1] << "'");
                 return EResult::FormatError;
             }
             ++i;
@@ -320,6 +325,7 @@ minipp::EResult minipp::MiniPPFile::Values::StringValue::ToString(std::string& d
             break;
         }
     }
+
     destination = "\"" + sanitizedValue + "\"";
     return EResult::Success;
 }
@@ -336,7 +342,10 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::Parse(const std::string& s
     std::string sanitizedValue = str;
     Tools::RemoveAll(sanitizedValue, '_');
     if (sanitizedValue.empty())
+    {
+		COUT("Empty string for integer value.");
         return EResult::FormatError;
+    }
 
     char lastCharacter = str.back();
     auto rest = str.substr(0, str.size() - 1);
@@ -353,7 +362,10 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::Parse(const std::string& s
     else
     {
         if (!Tools::IsIntegerDecimal(sanitizedValue))
+        {
+			COUT("Invalid integer value: " << sanitizedValue);
             return EResult::FormatError;
+        }
         m_value = std::stoll(sanitizedValue);
 		m_style = EIntStyle::Decimal;
     }
@@ -392,6 +404,7 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::ToString(std::string& dest
 		break;
     }
     default:
+		COUT("Invalid integer style.");
 		return EResult::FormatError;
 	}
 
@@ -412,7 +425,10 @@ minipp::EResult minipp::MiniPPFile::Values::BooleanValue::Parse(const std::strin
     else if (str == "false")
         m_value = false;
     else
+    {
+		COUT("Invalid boolean value: " << str << " (may only contain lowercase true and false)");
         return EResult::FormatError;
+    }
     return EResult::Success;
 }
 
@@ -450,7 +466,10 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
 {
     std::string nValue = str;
     if (str.front() != '[' || str.back() != ']')
+    {
+		COUT("Array value must be enclosed in [] brackets.");
         return EResult::FormatError;
+    }
     nValue = str.substr(1, str.size() - 2);
     if (nValue.empty())
         return EResult::Success;
@@ -495,7 +514,10 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
             {
                 --bracketCounter;
                 if (bracketCounter < 0)
+                {
+					COUT("Array brackets are not balanced. (One ] too much or encountered too early)");
                     return EResult::FormatError;
+                }
                 else if (bracketCounter >= 1)
                     currentElement += c;
             }
@@ -510,7 +532,10 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
     }
 
     if (bracketCounter != 0)
+    {
+		COUT("Array brackets are not balanced. (Missing " << bracketCounter << " closing brackets)");
         return EResult::FormatError;
+    }
 
     if (!currentElement.empty())
         elements.push_back(currentElement);
@@ -529,7 +554,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
             hasTypeHash = true;
         }
         else if (typeid(*parsed).hash_code() != lastTypeIdHash)
-            return EResult::FormatError;
+            return EResult::ArrayDataTypeInconsistency;
 
         m_values.push_back(std::move(parsed));
     }
@@ -555,7 +580,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::ToString(std::string& de
             hasTypeHash = true;
         }
         else if (typeid(*val).hash_code() != lastTypeIdHash)
-            return EResult::ArrayDataTypeInconsitency;
+            return EResult::ArrayDataTypeInconsistency;
 
         ss << buf << ", ";
     }
