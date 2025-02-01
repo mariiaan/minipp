@@ -23,7 +23,7 @@ namespace minipp
         FileIOError                 = -5,
         InvalidDataType             = -6,
         FormatError                 = -7,
-		ArrayDataTypeInconsistency   = -8,
+		ArrayDataTypeInconsistency  = -8,
 
         /* OK Codes */
         Success                     = +1,
@@ -197,7 +197,7 @@ namespace minipp
 
     private:
         static std::unique_ptr<Value> ParseValue(std::string value);
-        static minipp::EResult WriteSection(const Section* section, std::ofstream& ofs) noexcept;
+        static minipp::EResult WriteSection(const Section* section, std::ofstream& ofs, const std::string& partTreeName) noexcept;
 
     public:
         EResult Parse(const std::string& path) noexcept;
@@ -695,7 +695,7 @@ std::unique_ptr<minipp::MiniPPFile::Value> minipp::MiniPPFile::ParseValue(std::s
     }
 }
 
-minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::ofstream& ofs) noexcept
+minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::ofstream& ofs, const std::string& partTreeName) noexcept
 {
     if (section->m_values.size() > 0)
     {
@@ -731,8 +731,11 @@ minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::of
 		for (const auto& comment : pair.second->m_comments)
 			ofs << comment << std::endl;
 
-        ofs << "[" << pair.first << "]" << std::endl;
-        auto result = WriteSection(pair.second, ofs);
+        ofs << "[";
+        if (!partTreeName.empty())
+			ofs << partTreeName << ".";
+        ofs << pair.first << "]" << std::endl;
+        auto result = WriteSection(pair.second, ofs, (partTreeName.empty() ? "" : (partTreeName + ".")) + pair.first);
         if (!IsResultOk(result))
             return result;
     }
@@ -858,7 +861,7 @@ void minipp::MiniPPFile::Write(const std::string& path) const noexcept
     if (!ofs.is_open())
         return;
 
-    WriteSection(&m_rootSection, ofs);
+    WriteSection(&m_rootSection, ofs, "");
 }
 
 bool minipp::MiniPPFile::IsResultOk(EResult result) noexcept

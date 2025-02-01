@@ -8,12 +8,12 @@ is_completed = false
 
 # This section is about
 # the settings of a game window
-[window]
+[game.window]
 dimensions = [1280, 720]
 close_flags = 101011b
 hex_test = deadbeefh
 
-[platform]
+[game.window.platform]
 targets = ["win32", "macOS", "linux"]
 points = [[0, 0], [1, 0], [1, 1], [0, 1]]
 
