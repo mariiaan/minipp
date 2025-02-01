@@ -233,6 +233,7 @@ namespace minipp
 #include <typeinfo>
 #include <sstream>
 #include <iomanip>
+#include <stdlib.h>
 #include <bitset>
 
 #if MINIPP_ENABLE_DEBUG_OUTPUT
@@ -957,4 +958,4 @@ bool minipp::MiniPPFile::Tools::IsIntegerDecimal(const std::string& str) noexcep
 }
 
 #pragma endregion
-#endif
+#endif // MINIPP_IMPLEMENTATION
