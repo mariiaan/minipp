@@ -1,15 +1,32 @@
 #pragma once
+
+// This is a single-header reference implementation for the MINI config file format.
+// The MINI format is a simple, human-readable configuration file format.
+// #define MINIPP_IMPLEMENTATION in a single translation unit before including this header!
+
+/*
+    Copyright (c) 2025 mariiaan
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files 
+    (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge,
+    publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+    subject to the following conditions:
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+    DEALINGS IN THE SOFTWARE.
+*/
+
+// enabled helpful debug messages via std::cout (for parsing and writing)
+#define MINIPP_ENABLE_DEBUG_OUTPUT true
+
 #include <cstdint>
 #include <unordered_map>
 #include <string>
 #include <memory>
 #include <utility>
 #include <vector>
-
-// enabled helpful debug messages via std::cout (for parsing and writing)
-#define MINIPP_ENABLE_DEBUG_OUTPUT true
-
-// define MINIPP_IMPLEMENTATION in a single translation unit before including this header!
 
 namespace minipp
 {
@@ -65,10 +82,10 @@ namespace minipp
 
             public:
                 StringValue() = default;
-                StringValue(const std::string& str);
+                StringValue(const std::string& str) : m_value(str) {};
                 EResult Parse(const std::string& str) noexcept override;
                 EResult ToString(std::string& destination) const noexcept override;
-                const std::string& GetValue() const noexcept;
+                const std::string& GetValue() const noexcept { return m_value; }
             };
 
             class IntValue : public Value
@@ -79,10 +96,10 @@ namespace minipp
 
             public:
                 IntValue() = default;
-                IntValue(int64_t value);
+                IntValue(int64_t value) : m_value(value) {};
                 EResult Parse(const std::string& str) noexcept override;
                 EResult ToString(std::string& destination) const noexcept override;
-                int64_t GetValue() const noexcept;
+                int64_t GetValue() const noexcept { return m_value; }
             };
 
             class BooleanValue : public Value
@@ -92,10 +109,10 @@ namespace minipp
 
             public:
                 BooleanValue() = default;
-                BooleanValue(bool value);
+                BooleanValue(bool value) : m_value(value) {};
                 EResult Parse(const std::string& str) noexcept override;
                 EResult ToString(std::string& destination) const noexcept override;
-                bool GetValue() const noexcept;
+                bool GetValue() const noexcept { return m_value; }
             };
 
             class FloatValue : public Value
@@ -105,10 +122,10 @@ namespace minipp
 
             public:
                 FloatValue() = default;
-                FloatValue(double value);
+                FloatValue(double value) : m_value(value) {};
                 EResult Parse(const std::string& str) noexcept override;
                 EResult ToString(std::string& destination) const noexcept override;
-                double GetValue() const noexcept;
+                double GetValue() const noexcept { return m_value; }
             };
 
             class ArrayValue : public Value
@@ -156,14 +173,25 @@ namespace minipp
 			Section& operator=(const Section&) = delete;
 
         public:
-            template<typename T>
-            EResult GetValue(const std::string& key, T** target) noexcept
+            template<typename ValueDataType>
+            EResult GetValue(const std::string& key, ValueDataType** target) noexcept
             {
+				static_assert(std::is_base_of<Value, ValueDataType>::value, "ValueDataType must be a subclass of Value");
+				int64_t firstSeparatorIndex = Tools::FirstIndexOf(key, '.');
+				if (firstSeparatorIndex != -1)
+				{
+					std::string thisKey = key.substr(0, firstSeparatorIndex);
+					std::string rest = key.substr(firstSeparatorIndex + 1);
+					auto it = m_subSections.find(thisKey);
+					if (it == m_subSections.end())
+						return EResult::SectionNotPresent;
+					return it->second->GetValue(rest, target);
+				}
                 auto it = m_values.find(key);
                 if (it == m_values.end())
                     return EResult::KeyNotPresent;
 
-                auto val = dynamic_cast<T*>(it->second);
+                auto val = dynamic_cast<ValueDataType*>(it->second);
                 if (val == nullptr)
                     return EResult::InvalidDataType;
 
@@ -171,9 +199,10 @@ namespace minipp
                 return EResult::Success;
             }
 
-            template<typename T>
-            EResult SetValue(const std::string& name, std::unique_ptr<T> value, bool allowOverwrite = false) noexcept
+            template<typename ValueDataType>
+            EResult SetValue(const std::string& name, std::unique_ptr<ValueDataType> value, bool allowOverwrite = false) noexcept
             {
+                static_assert(std::is_base_of<Value, ValueDataType>::value, "ValueDataType must be a subclass of Value");
                 if (m_values.find(name) != m_values.end())
                     if (!allowOverwrite)
                         return EResult::KeyAlreadyPresent;
@@ -201,7 +230,7 @@ namespace minipp
 
     public:
         EResult Parse(const std::string& path) noexcept;
-        void Write(const std::string& path) const noexcept;
+        EResult Write(const std::string& path) const noexcept;
 
     public:
         const Section& GetRoot() const noexcept { return m_rootSection; }
@@ -233,24 +262,20 @@ namespace minipp
 #include <fstream>
 #include <typeinfo>
 #include <sstream>
-#include <iomanip>
 #include <stdlib.h>
 #include <bitset>
 
 #if MINIPP_ENABLE_DEBUG_OUTPUT
 #include <iostream>
-#define COUT(msg) std::cout << "[minipp] " << msg << std::endl
+    #define COUT(msg) std::cout << "[minipp] " << msg << std::endl
 #else
-#define COUT(msg)
+    #define COUT(msg)
 #endif
 
 #define ASSERT(condition) if (!condition) abort();
-
 #define COUT_SYNTAX_ERROR(line, msg) COUT("Error in line " << line << ": " << msg)
 
 #pragma region Value Types
-
-minipp::MiniPPFile::Values::StringValue::StringValue(const std::string& str) : m_value(str) {}
 
 minipp::EResult minipp::MiniPPFile::Values::StringValue::Parse(const std::string& str) noexcept
 {
@@ -330,13 +355,6 @@ minipp::EResult minipp::MiniPPFile::Values::StringValue::ToString(std::string& d
     return EResult::Success;
 }
 
-const std::string& minipp::MiniPPFile::Values::StringValue::GetValue() const noexcept
-{
-    return m_value;
-}
-
-minipp::MiniPPFile::Values::IntValue::IntValue(int64_t value) : m_value(value) {}
-
 minipp::EResult minipp::MiniPPFile::Values::IntValue::Parse(const std::string& str) noexcept
 {
     std::string sanitizedValue = str;
@@ -349,26 +367,40 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::Parse(const std::string& s
 
     char lastCharacter = str.back();
     auto rest = str.substr(0, str.size() - 1);
-    if (lastCharacter == 'h')
+    try
     {
-        m_value = std::stoll(rest, nullptr, 16);
-        m_style = EIntStyle::Hexadecimal;
-    }
-    else if (lastCharacter == 'b')
-    {
-        m_value = std::stoll(rest, nullptr, 2);
-		m_style = EIntStyle::Binary;
-    }
-    else
-    {
-        if (!Tools::IsIntegerDecimal(sanitizedValue))
+        if (lastCharacter == 'h')
         {
-			COUT("Invalid integer value: " << sanitizedValue);
-            return EResult::FormatError;
+            m_value = std::stoll(rest, nullptr, 16);
+            m_style = EIntStyle::Hexadecimal;
         }
-        m_value = std::stoll(sanitizedValue);
-		m_style = EIntStyle::Decimal;
+        else if (lastCharacter == 'b')
+        {
+            m_value = std::stoll(rest, nullptr, 2);
+            m_style = EIntStyle::Binary;
+        }
+        else
+        {
+            if (!Tools::IsIntegerDecimal(sanitizedValue))
+            {
+                COUT("Invalid decimal integer value: " << sanitizedValue);
+                return EResult::FormatError;
+            }
+            m_value = std::stoll(sanitizedValue);
+            m_style = EIntStyle::Decimal;
+        }
     }
+	catch (const std::invalid_argument&)
+	{
+		COUT("Invalid integer value: " << sanitizedValue);
+		return EResult::FormatError;
+	}
+	catch (const std::out_of_range&)
+	{
+		COUT("Integer value out of range: " << sanitizedValue);
+		return EResult::FormatError;
+	}
+
     return EResult::Success;
 }
 
@@ -393,13 +425,13 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::ToString(std::string& dest
 		std::bitset<64> bs(m_value);
         destination = bs.to_string() + "b";
         size_t i;
-		for (i = 0; i < destination.size(); ++i)
+		for (i = 0; i < destination.size(); ++i) // cut of leading zeros
 			if (destination[i] == '1')
 			{
 				destination = destination.substr(i);
 				break;
 			}
-		if (i == destination.size())
+		if (i == destination.size()) // we dont wan't 64 zeros for a 0 value
 			destination = "0b";
 		break;
     }
@@ -410,13 +442,6 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::ToString(std::string& dest
 
     return EResult::Success;
 }
-
-int64_t minipp::MiniPPFile::Values::IntValue::GetValue() const noexcept
-{
-    return m_value;
-}
-
-minipp::MiniPPFile::Values::BooleanValue::BooleanValue(bool value) : m_value(value) {}
 
 minipp::EResult minipp::MiniPPFile::Values::BooleanValue::Parse(const std::string& str) noexcept
 {
@@ -438,13 +463,6 @@ minipp::EResult minipp::MiniPPFile::Values::BooleanValue::ToString(std::string& 
     return EResult::Success;
 }
 
-bool minipp::MiniPPFile::Values::BooleanValue::GetValue() const noexcept
-{
-    return m_value;
-}
-
-minipp::MiniPPFile::Values::FloatValue::FloatValue(double value) : m_value(value) {}
-
 minipp::EResult minipp::MiniPPFile::Values::FloatValue::Parse(const std::string& str) noexcept
 {
     m_value = std::stod(str);
@@ -455,11 +473,6 @@ minipp::EResult minipp::MiniPPFile::Values::FloatValue::ToString(std::string& de
 {
     destination = std::to_string(m_value);
     return EResult::Success;
-}
-
-double minipp::MiniPPFile::Values::FloatValue::GetValue() const noexcept
-{
-    return m_value;
 }
 
 minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string& str) noexcept
@@ -475,7 +488,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
         return EResult::Success;
 
     int64_t bracketCounter = 0;
-    bool isInString = false;
+	bool isInString = false; // we may encounter array value separators "," inside strings; we need to ignore those
 
     std::vector<std::string> elements;
     std::string currentElement;
@@ -531,7 +544,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
         }
     }
 
-    if (bracketCounter != 0)
+	if (bracketCounter != 0) // will always be a positive value because negative values are caught earlier
     {
 		COUT("Array brackets are not balanced. (Missing " << bracketCounter << " closing brackets)");
         return EResult::FormatError;
@@ -585,8 +598,9 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::ToString(std::string& de
         ss << buf << ", ";
     }
     std::string valueString = ss.str();
-    if (!valueString.empty())
+	if (!valueString.empty()) // remove the last ", " if there are any elements
         valueString = valueString.substr(0, valueString.size() - 2);
+
     destination = "[" + valueString + "]";
     return EResult::Success;
 }
@@ -699,6 +713,7 @@ minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::of
 {
     if (section->m_values.size() > 0)
     {
+        std::string valueString;
         for (const auto& pair : section->m_values)
         {
             if (!Tools::IsNameValid(pair.first))
@@ -711,7 +726,6 @@ minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::of
 				ofs << comment << std::endl;
 
             ofs << pair.first << " = ";
-            std::string valueString;
             auto result = pair.second->ToString(valueString);
 			if (!IsResultOk(result))
 				return result;
@@ -853,14 +867,14 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path) noexcept
     return EResult::Success;
 }
 
-void minipp::MiniPPFile::Write(const std::string& path) const noexcept
+minipp::EResult minipp::MiniPPFile::Write(const std::string& path) const noexcept
 {
     std::ofstream ofs;
     ofs.open(path);
     if (!ofs.is_open())
-        return;
+        return EResult::FileIOError;
 
-    WriteSection(&m_rootSection, ofs, "");
+    return WriteSection(&m_rootSection, ofs, "");
 }
 
 bool minipp::MiniPPFile::IsResultOk(EResult result) noexcept
@@ -895,14 +909,12 @@ void minipp::MiniPPFile::Tools::StringTrim(std::string& str)
 {
     if (str.empty())
         return;
-
     size_t start = 0;
     size_t end = str.size() - 1;
     while (str[start] == ' ' || str[start] == '\t')
         start++;
     while (str[end] == ' ' || str[end] == '\t')
         end--;
-
     str = str.substr(start, end - start + 1);
 }
 

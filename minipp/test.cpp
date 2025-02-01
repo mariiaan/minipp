@@ -1,5 +1,5 @@
 #define MINIPP_IMPLEMENTATION
-#include "minipp/minipp.hpp"
+#include "minipp.hpp"
 
 using namespace minipp;
 
@@ -37,9 +37,10 @@ int main()
 	MiniPPFile::Values::ArrayValue* targetsValue = nullptr;
 	result = windowPlatformSection->GetValue("targets", &targetsValue);
 	MiniPPFile::Values::ArrayValue* pointsValue = nullptr;
-	result = windowPlatformSection->GetValue("points", &pointsValue);
+	//result = windowPlatformSection->GetValue("points", &pointsValue);
+	result = root.GetValue("game.window.platform.points", &pointsValue);
 
-	file.Write("test_out.mini");
+	result = file.Write("test_out.mini");
 
 	return 0;
 }

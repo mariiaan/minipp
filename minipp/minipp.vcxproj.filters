@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="minipp\minipp.hpp">
+    <ClInclude Include="minipp.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

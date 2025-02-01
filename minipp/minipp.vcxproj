@@ -127,7 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="minipp\minipp.hpp" />
+    <ClInclude Include="minipp.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="test.cpp" />
