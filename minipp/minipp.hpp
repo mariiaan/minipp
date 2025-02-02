@@ -271,18 +271,16 @@ namespace minipp
 #include <fstream>
 #include <typeinfo>
 #include <sstream>
-#include <stdlib.h>
 #include <bitset>
 
 #if MINIPP_ENABLE_DEBUG_OUTPUT
 #include <iostream>
-	#define COUT(msg) std::cout << "[minipp] " << msg << std::endl
+	#define PP_COUT(msg) std::cout << "[minipp] " << msg << std::endl
 #else
-	#define COUT(msg)
+	#define PP_COUT(msg)
 #endif
 
-#define ASSERT(condition) if (!condition) abort();
-#define COUT_SYNTAX_ERROR(line, msg) COUT("Error in line " << line << ": " << msg)
+#define PP_COUT_SYNTAX_ERROR(line, msg) PP_COUT("Error in line " << line << ": " << msg)
 
 #pragma region Value Types
 
@@ -296,7 +294,7 @@ minipp::EResult minipp::MiniPPFile::Values::StringValue::Parse(const std::string
 		{
 			if (i + 1 >= str.size())
 			{
-				COUT("Syntax error: '\\' at end of string");
+				PP_COUT("Syntax error: '\\' at end of string");
 				return EResult::FormatError;
 			}
 
@@ -318,7 +316,7 @@ minipp::EResult minipp::MiniPPFile::Values::StringValue::Parse(const std::string
 				m_value.push_back('\\');
 				break;
 			default:
-				COUT("Syntax error: Unknown escape sequence '\\" << str[i + 1] << "'");
+				PP_COUT("Syntax error: Unknown escape sequence '\\" << str[i + 1] << "'");
 				return EResult::FormatError;
 			}
 			++i;
@@ -373,7 +371,7 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::Parse(const std::string& s
 	Tools::RemoveAll(sanitizedValue, '_');
 	if (sanitizedValue.empty())
 	{
-		COUT("Empty string for integer value.");
+		PP_COUT("Empty string for integer value.");
 		return EResult::FormatError;
 	}
 
@@ -395,7 +393,7 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::Parse(const std::string& s
 		{
 			if (!Tools::IsIntegerDecimal(sanitizedValue))
 			{
-				COUT("Invalid decimal integer value: " << sanitizedValue);
+				PP_COUT("Invalid decimal integer value: " << sanitizedValue);
 				return EResult::FormatError;
 			}
 			m_value = std::stoll(sanitizedValue);
@@ -404,12 +402,12 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::Parse(const std::string& s
 	}
 	catch (const std::invalid_argument&)
 	{
-		COUT("Invalid integer value: " << sanitizedValue);
+		PP_COUT("Invalid integer value: " << sanitizedValue);
 		return EResult::FormatError;
 	}
 	catch (const std::out_of_range&)
 	{
-		COUT("Integer value out of range: " << sanitizedValue);
+		PP_COUT("Integer value out of range: " << sanitizedValue);
 		return EResult::FormatError;
 	}
 
@@ -448,7 +446,7 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::ToString(std::string& dest
 		break;
 	}
 	default:
-		COUT("Invalid integer style.");
+		PP_COUT("Invalid integer style.");
 		return EResult::FormatError;
 	}
 
@@ -463,7 +461,7 @@ minipp::EResult minipp::MiniPPFile::Values::BooleanValue::Parse(const std::strin
 		m_value = false;
 	else
 	{
-		COUT("Invalid boolean value: " << str << " (may only contain lowercase true and false)");
+		PP_COUT("Invalid boolean value: " << str << " (may only contain lowercase true and false)");
 		return EResult::FormatError;
 	}
 	return EResult::Success;
@@ -493,7 +491,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
 
 	if (str.front() != '[' || str.back() != ']')
 	{
-		COUT("Array value must be enclosed in [] brackets.");
+		PP_COUT("Array value must be enclosed in [] brackets.");
 		return EResult::FormatError;
 	}
 
@@ -542,7 +540,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
 				--bracketCounter;
 				if (bracketCounter < 0)
 				{
-					COUT("Array brackets are not balanced. (One ] too much or encountered too early)");
+					PP_COUT("Array brackets are not balanced. (One ] too much or encountered too early)");
 					return EResult::FormatError;
 				}
 				else if (bracketCounter >= 1)
@@ -560,7 +558,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
 
 	if (bracketCounter != 0) // will always be a positive value because negative values are caught earlier
 	{
-		COUT("Array brackets are not balanced. (Missing " << bracketCounter << " closing brackets)");
+		PP_COUT("Array brackets are not balanced. (Missing " << bracketCounter << " closing brackets)");
 		return EResult::FormatError;
 	}
 
@@ -645,7 +643,7 @@ minipp::EResult minipp::MiniPPFile::Section::GetSubSection(const std::string& ke
 	auto it = m_subSections.find(thisKey);
 	if (it == m_subSections.end())
 	{
-		COUT("Sub-Section not found: " << thisKey);
+		PP_COUT("Sub-Section not found: " << thisKey);
 		return EResult::SectionNotPresent;
 	}
 	if (rest.empty())
@@ -735,7 +733,7 @@ minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::of
 		{
 			if (!Tools::IsNameValid(pair.first))
 			{
-				COUT("Invalid name for key: " << pair.first);
+				PP_COUT("Invalid name for key: " << pair.first);
 				return EResult::FormatError;
 			}
 
@@ -758,7 +756,7 @@ minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::of
 	{
 		if (!Tools::IsNameValid(pair.first))
 		{
-			COUT("Invalid name for section: " << pair.first);
+			PP_COUT("Invalid name for section: " << pair.first);
 			return EResult::FormatError;
 		}
 
@@ -806,38 +804,37 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path) noexcept
 		{
 			if (lastChar != ']')
 			{
-				COUT_SYNTAX_ERROR(lineCounter, "Expected ']' at the end of the line.");
+				PP_COUT_SYNTAX_ERROR(lineCounter, "Expected ']' at the end of the line.");
 				return EResult::FormatError;
 			}
 			std::string sectionName = currentLine.substr(1, currentLine.size() - 2);
 			Tools::StringTrim(sectionName);
 			if (sectionName.empty())
 			{
-				COUT_SYNTAX_ERROR(lineCounter, "Expected section path. Found empty section begin notation.");
+				PP_COUT_SYNTAX_ERROR(lineCounter, "Expected section path. Found empty section begin notation.");
 				return EResult::FormatError;
 			}
 			// Create section tree
 			Section* ubSection = &m_rootSection;
 
 			std::vector<std::string> sectionPath = Tools::SplitByDelimiter(sectionName, '.');
+			EResult result;
 			for (size_t i = 0; i < sectionPath.size(); ++i)
 			{
 				const std::string& sectionName = sectionPath[i];
 				if (!Tools::IsNameValid(sectionName))
 				{
-					COUT_SYNTAX_ERROR(lineCounter, "Invalid section name. (\"" << sectionName << "\") May only contain [a - z][A - Z][0 - 9] and _.");
+					PP_COUT_SYNTAX_ERROR(lineCounter, "Invalid section name. (\"" << sectionName << "\") May only contain [a - z][A - Z][0 - 9] and _.");
 					return EResult::FormatError;
 				}
 
-				EResult result;
 				result = ubSection->SetSubSection(sectionName, std::make_unique<Section>(), false);
 				if (result == EResult::SectionAlreadyPresent && i == sectionPath.size() - 1)
 				{
-					COUT_SYNTAX_ERROR(lineCounter, "All (sub-) sections may only be defined once.");
+					PP_COUT_SYNTAX_ERROR(lineCounter, "All (sub-) sections may only be defined once.");
 					return EResult::FormatError;
 				}
-				result = ubSection->GetSubSection(sectionName, &ubSection);
-				ASSERT(IsResultOk(result)); // should never happen
+				ubSection->GetSubSection(sectionName, &ubSection);
 			}
 			currentSection = ubSection;
 			currentSection->m_comments = commentBuffer;
@@ -846,34 +843,35 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path) noexcept
 		}
 		if (currentSection == nullptr)
 		{
-			COUT_SYNTAX_ERROR(lineCounter, "Expected section begin before key-value pair.");
+			PP_COUT_SYNTAX_ERROR(lineCounter, "Expected section begin before key-value pair.");
 			return EResult::FormatError;
 		}
 
 		int64_t keyValueDelimiterIndex = Tools::FirstIndexOf(currentLine, '=');
 		if (keyValueDelimiterIndex == -1)
 		{
-			COUT_SYNTAX_ERROR(lineCounter, "Expected '=' in line.");
+			PP_COUT_SYNTAX_ERROR(lineCounter, "Expected '=' in line.");
 			return EResult::FormatError;
 		}
 
 		auto keyValuePair = Tools::SplitInTwo(currentLine, keyValueDelimiterIndex);
 		Tools::StringTrim(keyValuePair.first);
 		Tools::StringTrim(keyValuePair.second);
+
 		if (keyValuePair.first.empty())
 		{
-			COUT_SYNTAX_ERROR(lineCounter, "Expected key in line.");
+			PP_COUT_SYNTAX_ERROR(lineCounter, "Expected key in line.");
 			return EResult::FormatError;
 		}
 		if (keyValuePair.second.empty())
 		{
-			COUT_SYNTAX_ERROR(lineCounter, "Empty keys are not allowed");
+			PP_COUT_SYNTAX_ERROR(lineCounter, "Empty keys are not allowed");
 			return EResult::FormatError;
 		}
 		auto parsedValue = ParseValue(keyValuePair.second);
 		if (parsedValue == nullptr)
 		{
-			COUT_SYNTAX_ERROR(lineCounter, "Invalid value");
+			PP_COUT_SYNTAX_ERROR(lineCounter, "Invalid value");
 			return EResult::FormatError;
 		}
 		parsedValue->m_comments = commentBuffer;
@@ -1017,6 +1015,7 @@ bool minipp::MiniPPFile::Tools::IsIntegerDecimal(const std::string& str) noexcep
 	for (size_t i = 0; i < str.size(); ++i)
 		if (str[i] < '0' || str[i] > '9')
 			return false;
+
 	return true;
 }
 
