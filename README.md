@@ -34,6 +34,10 @@ int main()
 
   MiniPPFile::Section* gameSection = nullptr;
   result = root.GetSubSection("game", &gameSection);
+  // "Easy" API
+  int64_t test = gameSection.GetValueOrDefault<MiniPPFile::Values::IntValue>("year", 1999);
+
+  // Verbose API
   MiniPPFile::Values::StringValue* nameValue = nullptr;
   result = gameSection->GetValue("name", &nameValue);
   MiniPPFile::Values::IntValue* yearValue = nullptr;
