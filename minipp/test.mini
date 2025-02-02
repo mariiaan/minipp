@@ -1,10 +1,11 @@
 [game]
-name = "Test Game"
+name = "Test Game\nNext Line"
 version = "1.0.0"
 year = 2025
 completionPercentage = 50.0f
 # Should only be true if completionPercentage is 100
 is_completed = false
+testargs = ["this is a \"test\"", "this is\n the next line"]
 
 # This section is about
 # the settings of a game window

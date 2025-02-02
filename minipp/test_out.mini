@@ -1,7 +1,8 @@
 [game]
-name = "Test Game"
+name = "Test Game\nNext Line"
 completionPercentage = 50.000000
 version = "1.0.0"
+testargs = ["this is a \"test\"", "this is\n the next line"]
 year = 2025
 # Should only be true if completionPercentage is 100
 is_completed = false

@@ -547,7 +547,16 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
 		if (isInString)
 		{
 			if (c == '\\')
+			{
+				if (i + 1 >= str.size())
+				{
+					PP_COUT("Syntax error: Bad escape sequence: '\\' at end of string");
+					return EResult::FormatError;
+				}
+				currentElement += c;
+				currentElement += str[i + 1];
 				++i;
+			}
 			else if (c == '"')
 			{
 				isInString = false;
