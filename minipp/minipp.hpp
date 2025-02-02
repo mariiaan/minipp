@@ -312,6 +312,62 @@ namespace minipp
 
 #define PP_COUT_SYNTAX_ERROR(line, msg) PP_COUT("Error in line " << line << ": " << msg)
 
+std::unique_ptr<minipp::MiniPPFile::Value> minipp::MiniPPFile::Value::ParseValue(std::string value)
+{
+	char valueFirstChar = value.front();
+	char valueLastChar = value.back();
+	if (valueFirstChar == '"')
+	{
+		if (valueLastChar != '"')
+			return nullptr;
+
+		// is string
+		value = value.substr(1, value.size() - 2);
+		auto strValue = std::make_unique<Values::StringValue>();
+		auto parseResult = strValue->Parse(value);
+		if (!IsResultOk(parseResult))
+			return nullptr;
+
+		return strValue;
+	}
+	else if (valueLastChar == 'e')
+	{
+		auto boolValue = std::make_unique<Values::BooleanValue>();
+		auto parseResult = boolValue->Parse(value);
+		if (!IsResultOk(parseResult))
+			return nullptr;
+
+		return boolValue;
+	}
+	else if (valueLastChar == 'f')
+	{
+		auto floatValue = std::make_unique<Values::FloatValue>();
+		auto parseResult = floatValue->Parse(value);
+		if (!IsResultOk(parseResult))
+			return nullptr;
+
+		return floatValue;
+	}
+	else if (valueLastChar == ']')
+	{
+		auto arrayValue = std::make_unique<Values::ArrayValue>();
+		auto parseResult = arrayValue->Parse(value);
+		if (!IsResultOk(parseResult))
+			return nullptr;
+
+		return arrayValue;
+	}
+	else
+	{
+		auto intValue = std::make_unique<Values::IntValue>();
+		auto parseResult = intValue->Parse(value);
+		if (!IsResultOk(parseResult))
+			return nullptr;
+
+		return intValue;
+	}
+}
+
 #pragma region Value Types
 
 minipp::EResult minipp::MiniPPFile::Values::StringValue::Parse(const std::string& str) noexcept
@@ -524,17 +580,11 @@ minipp::MiniPPFile::Values::ArrayValue::~ArrayValue()
 
 minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string& str) noexcept
 {
-	std::string nValue = str;
-
 	if (str.front() != '[' || str.back() != ']')
 	{
 		PP_COUT("Array value must be enclosed in [] brackets.");
 		return EResult::FormatError;
 	}
-
-	nValue = str.substr(1, str.size() - 2);
-	if (nValue.empty())
-		return EResult::Success;
 
 	int64_t bracketCounter = 0;
 	bool isInString = false; // we may encounter array value separators "," inside strings; we need to ignore those
@@ -712,62 +762,6 @@ minipp::EResult minipp::MiniPPFile::Section::SetSubSection(const std::string& na
 	m_subSections[name] = value.release();
 
 	return EResult::Success;
-}
-
-std::unique_ptr<minipp::MiniPPFile::Value> minipp::MiniPPFile::Value::ParseValue(std::string value)
-{
-	char valueFirstChar = value.front();
-	char valueLastChar = value.back();
-	if (valueFirstChar == '"')
-	{
-		if (valueLastChar != '"')
-			return nullptr;
-
-		// is string
-		value = value.substr(1, value.size() - 2);
-		auto strValue = std::make_unique<Values::StringValue>();
-		auto parseResult = strValue->Parse(value);
-		if (!IsResultOk(parseResult))
-			return nullptr;
-
-		return strValue;
-	}
-	else if (valueLastChar == 'e')
-	{
-		auto boolValue = std::make_unique<Values::BooleanValue>();
-		auto parseResult = boolValue->Parse(value);
-		if (!IsResultOk(parseResult))
-			return nullptr;
-
-		return boolValue;
-	}
-	else if (valueLastChar == 'f')
-	{
-		auto floatValue = std::make_unique<Values::FloatValue>();
-		auto parseResult = floatValue->Parse(value);
-		if (!IsResultOk(parseResult))
-			return nullptr;
-
-		return floatValue;
-	}
-	else if (valueLastChar == ']')
-	{
-		auto arrayValue = std::make_unique<Values::ArrayValue>();
-		auto parseResult = arrayValue->Parse(value);
-		if (!IsResultOk(parseResult))
-			return nullptr;
-
-		return arrayValue;
-	}
-	else
-	{
-		auto intValue = std::make_unique<Values::IntValue>();
-		auto parseResult = intValue->Parse(value);
-		if (!IsResultOk(parseResult))
-			return nullptr;
-
-		return intValue;
-	}
 }
 
 minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::ofstream& ofs, std::string partTreeName) noexcept
