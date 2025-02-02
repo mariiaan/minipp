@@ -34,12 +34,16 @@ int main()
 
   MiniPPFile::Section* gameSection = nullptr;
   result = root.GetSubSection("game", &gameSection);
+  // "Easy" API
+  int64_t test = gameSection.GetValueOrDefault<MiniPPFile::Values::IntValue>("year", 1999);
+
+  // Verbose API
   MiniPPFile::Values::StringValue* nameValue = nullptr;
   result = gameSection->GetValue("name", &nameValue);
   MiniPPFile::Values::IntValue* yearValue = nullptr;
   result = gameSection->GetValue("year", &yearValue);
 
-  // Get a sub-section (section of a section (stated in the MINI file with "[game.window]")
+  // Get a sub-section (section of a section, stated in the MINI file with "[game.window]")
   MiniPPFile::Section* windowSection = nullptr;
   result = gameSection->GetSubSection("window", &windowSection);
 
@@ -47,12 +51,12 @@ int main()
   // Get a sub-section by using the dot operator
   result = gameSection->GetSubSection("window.platform", &windowPlatformSection);
 
-  MiniPPFile::Values::ArrayValue* pointsValue = nullptr;
+  MiniPPFile::Values::ArrayValue* platformTargetsValue = nullptr;
   // Retrieve an array by using the relative value path (the game section is a child of the root section)
-  result = root.GetValue("game.window.platform.targets", &pointsValue);
+  result = root.GetValue("game.window.platform.targets", &platformTargetsValue);
 
   // Modify the "targets" array by adding a new value
-  pointsValue->GetValues().push_back(std::make_unique<MiniPPFile::Values::StringValue>("haiku"));
+  platformTargetsValue->GetValue().push_back(std::make_unique<MiniPPFile::Values::StringValue>("haiku"));
 
   // Serialize the config
   result = file.Write("test_out.mini");
@@ -88,9 +92,12 @@ int main()
     // Access values
     MiniPPFile::Values::StringValue* nameValue = nullptr;
     result = gameSection->GetValue("name", &nameValue);
+
+    // .. OR ..
+
+    std::string nameValue = gameSection->GetValueOrDefault<MiniPPFile::Values::StringValue>("name", "Unknown");
    
     // Navigate nested sections
-
     MiniPPFile::Section* windowSection = nullptr;
     result = gameSection->GetSubSection("window", &windowSection);
 
@@ -110,7 +117,7 @@ int main()
     result = root.GetValue("game.window.platform.points", &pointsValue);
 
     // Modify the array values (or read them)
-    pointsValue->GetValues().push_back(std::make_unique<MiniPPFile::Values::StringValue>("haiku"));
+    pointsValue->GetValue().push_back(std::make_unique<MiniPPFile::Values::StringValue>("haiku"));
 
    ```
 5. **Write new files**:
@@ -121,7 +128,7 @@ int main()
 
 ## Example
 
-An example mini file is contained in this [repository](minipp/test.mini). The full mini file format specilization can be found [here](https://github.com/ToyB-Chan/mini-file-format).
+An example mini file is contained in this [repository](minipp/test.mini). The full mini file format specification can be found [here](https://github.com/ToyB-Chan/mini-file-format).
 
 ## Installation
 
