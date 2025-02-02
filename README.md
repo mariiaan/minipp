@@ -51,12 +51,12 @@ int main()
   // Get a sub-section by using the dot operator
   result = gameSection->GetSubSection("window.platform", &windowPlatformSection);
 
-  MiniPPFile::Values::ArrayValue* pointsValue = nullptr;
+  MiniPPFile::Values::ArrayValue* platformTargetsValue = nullptr;
   // Retrieve an array by using the relative value path (the game section is a child of the root section)
-  result = root.GetValue("game.window.platform.targets", &pointsValue);
+  result = root.GetValue("game.window.platform.targets", &platformTargetsValue);
 
   // Modify the "targets" array by adding a new value
-  pointsValue->GetValues().push_back(std::make_unique<MiniPPFile::Values::StringValue>("haiku"));
+  platformTargetsValue->GetValues().push_back(std::make_unique<MiniPPFile::Values::StringValue>("haiku"));
 
   // Serialize the config
   result = file.Write("test_out.mini");
@@ -113,11 +113,11 @@ int main()
 
    ```cpp
     // Handle arrays
-    MiniPPFile::Values::ArrayValue* platformsValue = nullptr;
-    result = root.GetValue("game.window.platform.points", &platformsValue);
+    MiniPPFile::Values::ArrayValue* pointsValue = nullptr;
+    result = root.GetValue("game.window.platform.points", &pointsValue);
 
     // Modify the array values (or read them)
-    platformsValue->GetValue().push_back(std::make_unique<MiniPPFile::Values::StringValue>("haiku"));
+    pointsValue->GetValue().push_back(std::make_unique<MiniPPFile::Values::StringValue>("haiku"));
 
    ```
 5. **Write new files**:
