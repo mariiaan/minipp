@@ -70,6 +70,9 @@ namespace minipp
 			virtual ~Value() = default;
 			std::vector<std::string>& GetComments() noexcept { return m_comments; }
 			const std::vector<std::string>& GetComments() const noexcept { return m_comments; }
+
+		public:
+			static std::unique_ptr<Value> ParseValue(std::string value);
 		};
 
 		class Values
@@ -262,7 +265,6 @@ namespace minipp
 		Section m_rootSection{};
 
 	private:
-		static std::unique_ptr<Value> ParseValue(std::string value);
 		static minipp::EResult WriteSection(const Section* section, std::ofstream& ofs, std::string partTreeName) noexcept;
 
 	public:
@@ -712,7 +714,7 @@ minipp::EResult minipp::MiniPPFile::Section::SetSubSection(const std::string& na
 	return EResult::Success;
 }
 
-std::unique_ptr<minipp::MiniPPFile::Value> minipp::MiniPPFile::ParseValue(std::string value)
+std::unique_ptr<minipp::MiniPPFile::Value> minipp::MiniPPFile::Value::ParseValue(std::string value)
 {
 	char valueFirstChar = value.front();
 	char valueLastChar = value.back();
@@ -918,7 +920,7 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path) noexcept
 			PP_COUT_SYNTAX_ERROR(lineCounter, "Empty keys are not allowed");
 			return EResult::FormatError;
 		}
-		auto parsedValue = ParseValue(keyValuePair.second);
+		auto parsedValue = Value::ParseValue(keyValuePair.second);
 		if (parsedValue == nullptr)
 		{
 			PP_COUT_SYNTAX_ERROR(lineCounter, "Invalid value");
