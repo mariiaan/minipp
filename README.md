@@ -56,7 +56,7 @@ int main()
   result = root.GetValue("game.window.platform.targets", &platformTargetsValue);
 
   // Modify the "targets" array by adding a new value
-  platformTargetsValue->GetValues().push_back(std::make_unique<MiniPPFile::Values::StringValue>("haiku"));
+  platformTargetsValue->GetValue().push_back(std::make_unique<MiniPPFile::Values::StringValue>("haiku"));
 
   // Serialize the config
   result = file.Write("test_out.mini");
