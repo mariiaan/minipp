@@ -42,5 +42,6 @@ int main()
 
 	result = file.Write("test_out.mini");
 
+	int64_t test = root.GetValueOrDefault<MiniPPFile::Values::IntValue>("game.year", 1999);
 	return 0;
 }

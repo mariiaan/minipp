@@ -77,78 +77,94 @@ namespace minipp
 		public:
 			class StringValue : public Value
 			{
+			public:
+				using BaseType = std::string;
+
 			private:
-				std::string m_value;
+				BaseType m_value;
 
 			public:
 				StringValue() = default;
-				StringValue(const std::string& str) : m_value(str) {};
+				StringValue(const BaseType& str) : m_value(str) {};
 				EResult Parse(const std::string& str) noexcept override;
 				EResult ToString(std::string& destination) const noexcept override;
-				const std::string& GetValue() const noexcept { return m_value; }
+				const BaseType& GetValue() const noexcept { return m_value; }
 			};
 
 			class IntValue : public Value
 			{
+			public:
+				using BaseType = int64_t;
+
 			private:
-				int64_t m_value = 0;
+				BaseType m_value = 0;
 				EIntStyle m_style = EIntStyle::Decimal;
 
 			public:
 				IntValue() = default;
-				IntValue(int64_t value) : m_value(value) {};
+				IntValue(BaseType value) : m_value(value) {};
 				EResult Parse(const std::string& str) noexcept override;
 				EResult ToString(std::string& destination) const noexcept override;
-				int64_t GetValue() const noexcept { return m_value; }
+				BaseType GetValue() const noexcept { return m_value; }
 			};
 
 			class BooleanValue : public Value
 			{
+			public:
+				using BaseType = bool;
+
 			private:
-				bool m_value = false;
+				BaseType m_value = false;
 
 			public:
 				BooleanValue() = default;
-				BooleanValue(bool value) : m_value(value) {};
+				BooleanValue(BaseType value) : m_value(value) {};
 				EResult Parse(const std::string& str) noexcept override;
 				EResult ToString(std::string& destination) const noexcept override;
-				bool GetValue() const noexcept { return m_value; }
+				BaseType GetValue() const noexcept { return m_value; }
 			};
 
 			class FloatValue : public Value
 			{
+			public:
+				using BaseType = double;
+
 			private:
-				double m_value = 0.0f;
+				BaseType m_value = 0.0f;
 
 			public:
 				FloatValue() = default;
-				FloatValue(double value) : m_value(value) {};
+				FloatValue(BaseType value) : m_value(value) {};
 				EResult Parse(const std::string& str) noexcept override;
 				EResult ToString(std::string& destination) const noexcept override;
-				double GetValue() const noexcept { return m_value; }
+				BaseType GetValue() const noexcept { return m_value; }
 			};
 
 			class ArrayValue : public Value
 			{
+			public:
+				using BaseType = std::vector<Value*>;
+
 			private:
-				std::vector<std::unique_ptr<Value>> m_values;
+				BaseType m_values;
 
 			public:
 				ArrayValue() = default;
 				ArrayValue(const ArrayValue&) = delete;
 				ArrayValue& operator=(const ArrayValue&) = delete;
+				virtual ~ArrayValue();
 
 			public:
 				EResult Parse(const std::string& str) noexcept override;
 				EResult ToString(std::string& destination) const noexcept override;
-				std::vector<std::unique_ptr<Value>>& GetValues() noexcept { return m_values; }
-				const std::vector<std::unique_ptr<Value>>& GetValues() const noexcept { return m_values; }
+				BaseType& GetValue() noexcept { return m_values; }
+				const BaseType& GetValue() const noexcept { return m_values; }
 
 				Value* operator[](size_t index) noexcept
 				{
 					if (index >= m_values.size())
 						return nullptr;
-					return m_values[index].get();
+					return m_values[index];
 				}
 			};
 		};
@@ -221,6 +237,18 @@ namespace minipp
 				m_values[name] = value.release();
 				return EResult::Success;
 			}
+
+            template<typename ValueDataType>
+            typename ValueDataType::BaseType GetValueOrDefault(const std::string& key, 
+				const typename ValueDataType::BaseType& defaultValue = typename ValueDataType::BaseType{})
+            {
+				static_assert(std::is_base_of<Value, ValueDataType>::value, "ValueDataType must be a subclass of Value");
+
+				ValueDataType* value = nullptr;
+				if (GetValue(key, &value) != EResult::Success)
+					return defaultValue;
+				return value->GetValue();
+            }
 
 		public:
 			EResult GetSubSection(const std::string& key, Section** destination) const noexcept;
@@ -434,6 +462,7 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::ToString(std::string& dest
 	{
 		std::bitset<64> bs(m_value);
 		destination = bs.to_string() + "b";
+
 		size_t i;
 		for (i = 0; i < destination.size(); ++i) // cut of leading zeros
 			if (destination[i] == '1')
@@ -483,6 +512,12 @@ minipp::EResult minipp::MiniPPFile::Values::FloatValue::ToString(std::string& de
 {
 	destination = std::to_string(m_value);
 	return EResult::Success;
+}
+
+minipp::MiniPPFile::Values::ArrayValue::~ArrayValue()
+{
+	for (auto& val : m_values)
+		delete val;
 }
 
 minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string& str) noexcept
@@ -581,7 +616,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
 		else if (typeid(*parsed).hash_code() != lastTypeIdHash)
 			return EResult::ArrayDataTypeInconsistency;
 
-		m_values.push_back(std::move(parsed));
+		m_values.push_back(parsed.release());
 	}
 
 	return EResult::Success;
