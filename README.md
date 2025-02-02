@@ -43,7 +43,7 @@ int main()
   MiniPPFile::Values::IntValue* yearValue = nullptr;
   result = gameSection->GetValue("year", &yearValue);
 
-  // Get a sub-section (section of a section (stated in the MINI file with "[game.window]")
+  // Get a sub-section (section of a section, stated in the MINI file with "[game.window]")
   MiniPPFile::Section* windowSection = nullptr;
   result = gameSection->GetSubSection("window", &windowSection);
 
@@ -92,9 +92,12 @@ int main()
     // Access values
     MiniPPFile::Values::StringValue* nameValue = nullptr;
     result = gameSection->GetValue("name", &nameValue);
+
+    // .. OR ..
+
+    std::string nameValue = gameSection->GetValueOrDefault<MiniPPFile::Values::StringValue>("name", "Unknown");
    
     // Navigate nested sections
-
     MiniPPFile::Section* windowSection = nullptr;
     result = gameSection->GetSubSection("window", &windowSection);
 
@@ -110,11 +113,11 @@ int main()
 
    ```cpp
     // Handle arrays
-    MiniPPFile::Values::ArrayValue* pointsValue = nullptr;
-    result = root.GetValue("game.window.platform.points", &pointsValue);
+    MiniPPFile::Values::ArrayValue* platformsValue = nullptr;
+    result = root.GetValue("game.window.platform.points", &platformsValue);
 
     // Modify the array values (or read them)
-    pointsValue->GetValues().push_back(std::make_unique<MiniPPFile::Values::StringValue>("haiku"));
+    platformsValue->GetValue().push_back(std::make_unique<MiniPPFile::Values::StringValue>("haiku"));
 
    ```
 5. **Write new files**:
@@ -125,7 +128,7 @@ int main()
 
 ## Example
 
-An example mini file is contained in this [repository](minipp/test.mini). The full mini file format specilization can be found [here](https://github.com/ToyB-Chan/mini-file-format).
+An example mini file is contained in this [repository](minipp/test.mini). The full mini file format specification can be found [here](https://github.com/ToyB-Chan/mini-file-format).
 
 ## Installation
 
