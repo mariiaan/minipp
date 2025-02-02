@@ -851,9 +851,9 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path) noexcept
 				PP_COUT_SYNTAX_ERROR(lineCounter, "Expected ']' at the end of the line.");
 				return EResult::FormatError;
 			}
-			std::string sectionName = currentLine.substr(1, currentLine.size() - 2);
-			Tools::StringTrim(sectionName);
-			if (sectionName.empty())
+			std::string sectionPathStr = currentLine.substr(1, currentLine.size() - 2);
+			Tools::StringTrim(sectionPathStr);
+			if (sectionPathStr.empty())
 			{
 				PP_COUT_SYNTAX_ERROR(lineCounter, "Expected section path. Found empty section begin notation.");
 				return EResult::FormatError;
@@ -861,7 +861,7 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path) noexcept
 			// Create section tree
 			Section* ubSection = &m_rootSection;
 
-			std::vector<std::string> sectionPath = Tools::SplitByDelimiter(sectionName, '.');
+			std::vector<std::string> sectionPath = Tools::SplitByDelimiter(sectionPathStr, '.');
 			EResult result;
 			for (size_t i = 0; i < sectionPath.size(); ++i)
 			{
@@ -907,6 +907,12 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path) noexcept
 			PP_COUT_SYNTAX_ERROR(lineCounter, "Expected key in line.");
 			return EResult::FormatError;
 		}
+		if (!Tools::IsNameValid(keyValuePair.first))
+		{
+			PP_COUT_SYNTAX_ERROR(lineCounter, "Invalid key name. (\"" << keyValuePair.first << "\") May only contain [a - z][A - Z][0 - 9] and _.");
+			return EResult::FormatError;
+		}
+
 		if (keyValuePair.second.empty())
 		{
 			PP_COUT_SYNTAX_ERROR(lineCounter, "Empty keys are not allowed");
@@ -921,7 +927,12 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path) noexcept
 		parsedValue->m_comments = commentBuffer;
 		commentBuffer.clear();
 
-		currentSection->SetValue(keyValuePair.first, std::move(parsedValue), false);
+		auto valueSetResult = currentSection->SetValue(keyValuePair.first, std::move(parsedValue), false);
+		if (valueSetResult != EResult::Success)
+		{
+			PP_COUT_SYNTAX_ERROR(lineCounter, "Key already present: " << keyValuePair.first);
+			return valueSetResult;
+		}
 	}
 
 	return EResult::Success;
@@ -993,6 +1004,7 @@ bool minipp::MiniPPFile::Tools::IsNameValid(const std::string& name) noexcept
 			continue;
 		return false;
 	}
+
 	return true;
 }
 
