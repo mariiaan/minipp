@@ -8,7 +8,7 @@ int main()
 	EResult result;
 
 	MiniPPFile file;
-	result = file.Parse("simple.mini");
+	result = file.Parse("test.mini");
 
 	auto& root = file.GetRoot();
 

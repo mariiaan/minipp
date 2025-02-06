@@ -332,7 +332,8 @@ namespace minipp
 	#define PP_COUT(msg)
 #endif
 
-#define PP_COUT_SYNTAX_ERROR(line, msg) PP_COUT("Error in line " << line << ": " << msg)
+#define PP_COUT_SYNTAX_ERROR_LINE(line, msg) PP_COUT(line << ": " << msg)
+#define PP_COUT_SYNTAX_ERROR(msg) PP_COUT("Syntax error: " << msg)
 
 std::unique_ptr<minipp::MiniPPFile::Value> minipp::MiniPPFile::Value::ParseValue(std::string value, EResult* result)
 {
@@ -404,7 +405,7 @@ minipp::EResult minipp::MiniPPFile::Values::StringValue::Parse(const std::string
 		{
 			if (i + 1 >= str.size())
 			{
-				PP_COUT("Syntax error: '\\' at end of string");
+				PP_COUT_SYNTAX_ERROR("'\\' at end of string");
 				return EResult::BadEscapeSequence;
 			}
 
@@ -426,7 +427,7 @@ minipp::EResult minipp::MiniPPFile::Values::StringValue::Parse(const std::string
 				m_value.push_back('\\');
 				break;
 			default:
-				PP_COUT("Syntax error: Unknown escape sequence '\\" << str[i + 1] << "'");
+				PP_COUT_SYNTAX_ERROR("Unknown escape sequence '\\" << str[i + 1] << "'");
 				return EResult::UnknownEscapeSequence;
 			}
 			++i;
@@ -482,7 +483,7 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::Parse(const std::string& s
 	Tools::RemoveAll(sanitizedValue, '_');
 	if (sanitizedValue.empty())
 	{
-		PP_COUT("Empty string for integer value.");
+		PP_COUT_SYNTAX_ERROR("Empty string for integer value.");
 		return EResult::FormatError;
 	}
 
@@ -504,7 +505,7 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::Parse(const std::string& s
 		{
 			if (!Tools::IsIntegerDecimal(sanitizedValue))
 			{
-				PP_COUT("Invalid decimal integer value: " << sanitizedValue);
+				PP_COUT_SYNTAX_ERROR("Invalid decimal integer value: " << sanitizedValue);
 				return EResult::IntegerValueInvalid;
 			}
 			m_value = std::stoll(sanitizedValue);
@@ -513,12 +514,12 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::Parse(const std::string& s
 	}
 	catch (const std::invalid_argument&)
 	{
-		PP_COUT("Invalid integer value: " << sanitizedValue);
+		PP_COUT_SYNTAX_ERROR("Invalid integer value: " << sanitizedValue);
 		return EResult::IntegerValueInvalid;
 	}
 	catch (const std::out_of_range&)
 	{
-		PP_COUT("Integer value out of range: " << sanitizedValue);
+		PP_COUT_SYNTAX_ERROR("Integer value out of range: " << sanitizedValue);
 		return EResult::IntegerValueOutOfRange;
 	}
 
@@ -558,7 +559,7 @@ minipp::EResult minipp::MiniPPFile::Values::IntValue::ToString(std::string& dest
 		break;
 	}
 	default:
-		PP_COUT("Invalid integer style.");
+		PP_COUT_SYNTAX_ERROR("Invalid integer style.");
 		return EResult::IntegerStyleInvalid;
 	}
 
@@ -573,7 +574,7 @@ minipp::EResult minipp::MiniPPFile::Values::BooleanValue::Parse(const std::strin
 		m_value = false;
 	else
 	{
-		PP_COUT("Invalid boolean value: " << str << " (may only contain lowercase true and false)");
+		PP_COUT_SYNTAX_ERROR("Invalid boolean value: " << str << " (may only contain lowercase true and false)");
 		return EResult::BooleanValueInvalid;
 	}
 	return EResult::Success;
@@ -593,7 +594,7 @@ minipp::EResult minipp::MiniPPFile::Values::FloatValue::Parse(const std::string&
 	}
 	catch (...)
 	{
-		PP_COUT("Invalid float value: " << str);
+		PP_COUT_SYNTAX_ERROR("Invalid float value: " << str);
 		return EResult::FloatValueInvalid;
 	}
 
@@ -616,7 +617,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
 {
 	if (str.front() != '[' || str.back() != ']')
 	{
-		PP_COUT("Array value must be enclosed in [] brackets.");
+		PP_COUT_SYNTAX_ERROR("Array value must be enclosed in [] brackets.");
 		return EResult::FormatError;
 	}
 
@@ -636,7 +637,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
 			{
 				if (i + 1 >= str.size())
 				{
-					PP_COUT("Syntax error: Bad escape sequence: '\\' at end of string");
+					PP_COUT_SYNTAX_ERROR("Bad escape sequence: '\\' at end of string");
 					return EResult::BadEscapeSequence;
 				}
 				currentElement += c;
@@ -670,7 +671,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
 				--bracketCounter;
 				if (bracketCounter < 0)
 				{
-					PP_COUT("Array brackets are not balanced. (One ] too much or encountered too early)");
+					PP_COUT_SYNTAX_ERROR("Array brackets are not balanced. (One ] too much or encountered too early)");
 					return EResult::ArrayBracketsInbalanced;
 				}
 				else if (bracketCounter >= 1)
@@ -688,7 +689,7 @@ minipp::EResult minipp::MiniPPFile::Values::ArrayValue::Parse(const std::string&
 
 	if (bracketCounter != 0) // will always be a positive value because negative values are caught earlier
 	{
-		PP_COUT("Array brackets are not balanced. (Missing " << bracketCounter << " closing brackets)");
+		PP_COUT_SYNTAX_ERROR("Array brackets are not balanced. (Missing " << bracketCounter << " closing brackets)");
 		return EResult::ArrayBracketsInbalanced;
 	}
 
@@ -774,7 +775,7 @@ minipp::EResult minipp::MiniPPFile::Section::GetSubSection(const std::string& ke
 	auto it = m_subSections.find(thisKey);
 	if (it == m_subSections.end())
 	{
-		PP_COUT("Sub-Section not found: " << thisKey);
+		PP_COUT_SYNTAX_ERROR("Sub-Section not found: " << thisKey);
 		return EResult::SectionNotPresent;
 	}
 	if (rest.empty())
@@ -808,7 +809,7 @@ minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::of
 		{
 			if (!Tools::IsNameValid(pair.first))
 			{
-				PP_COUT("Invalid name for key: " << pair.first);
+				PP_COUT_SYNTAX_ERROR("Invalid name for key: " << pair.first);
 				return EResult::InvalidName;
 			}
 
@@ -831,7 +832,7 @@ minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::of
 	{
 		if (!Tools::IsNameValid(pair.first))
 		{
-			PP_COUT("Invalid name for section: " << pair.first);
+			PP_COUT_SYNTAX_ERROR("Invalid name for section: " << pair.first);
 			return EResult::InvalidName;
 		}
 
@@ -849,6 +850,7 @@ minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::of
 
 minipp::EResult minipp::MiniPPFile::Parse(const std::string& path, bool additional) noexcept
 {
+#define PP_COUT_HERE() PP_COUT_SYNTAX_ERROR_LINE(lineCounter, currentLine << " <- HERE");
 	if (!additional)
 	{
 		m_rootSection.m_comments.clear();
@@ -886,14 +888,16 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path, bool addition
 		{
 			if (lastChar != ']')
 			{
-				PP_COUT_SYNTAX_ERROR(lineCounter, "Expected ']' at the end of the line.");
+				PP_COUT_SYNTAX_ERROR("Expected ']' at the end of the line.");
+				PP_COUT_HERE();
 				return EResult::SectionExpectedClosingBracket;
 			}
 			std::string sectionPathStr = currentLine.substr(1, currentLine.size() - 2);
 			Tools::StringTrim(sectionPathStr);
 			if (sectionPathStr.empty())
 			{
-				PP_COUT_SYNTAX_ERROR(lineCounter, "Expected section path. Found empty section begin notation.");
+				PP_COUT_SYNTAX_ERROR("Expected section path. Found empty section begin notation.");
+				PP_COUT_HERE();
 				return EResult::EmptySectionName;
 			}
 			// Create section tree
@@ -906,14 +910,16 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path, bool addition
 				const std::string& sectionName = sectionPath[i];
 				if (!Tools::IsNameValid(sectionName))
 				{
-					PP_COUT_SYNTAX_ERROR(lineCounter, "Invalid section name. (\"" << sectionName << "\") May only contain [a - z][A - Z][0 - 9] and _.");
+					PP_COUT_SYNTAX_ERROR("Invalid section name. (\"" << sectionName << "\") May only contain [a - z][A - Z][0 - 9] and _.");
+					PP_COUT_HERE();
 					return EResult::InvalidName;
 				}
 
 				result = ubSection->SetSubSection(sectionName, std::make_unique<Section>(), false);
 				if (result == EResult::SectionAlreadyPresent && i == sectionPath.size() - 1)
 				{
-					PP_COUT_SYNTAX_ERROR(lineCounter, "All (sub-) sections may only be defined once.");
+					PP_COUT_SYNTAX_ERROR("All (sub-) sections may only be defined once.");
+					PP_COUT_HERE();
 					return EResult::SectionAlreadyPresent;
 				}
 				ubSection->GetSubSection(sectionName, &ubSection);
@@ -925,14 +931,16 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path, bool addition
 		}
 		if (currentSection == nullptr)
 		{
-			PP_COUT_SYNTAX_ERROR(lineCounter, "Expected section begin before key-value pair.");
+			PP_COUT_SYNTAX_ERROR("Expected section begin before key-value pair.");
+			PP_COUT_HERE();
 			return EResult::KeyValuePairNotInSection;
 		}
 
 		int64_t keyValueDelimiterIndex = Tools::FirstIndexOf(currentLine, '=');
 		if (keyValueDelimiterIndex == -1)
 		{
-			PP_COUT_SYNTAX_ERROR(lineCounter, "Expected '=' in line.");
+			PP_COUT_SYNTAX_ERROR("Expected '=' in line.");
+			PP_COUT_HERE();
 			return EResult::ExpectedKeyValuePair;
 		}
 
@@ -942,25 +950,29 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path, bool addition
 
 		if (keyValuePair.first.empty())
 		{
-			PP_COUT_SYNTAX_ERROR(lineCounter, "Expected key in line.");
+			PP_COUT_SYNTAX_ERROR("Expected key in line.");
+			PP_COUT_HERE();
 			return EResult::KeyEmpty;
 		}
 		if (!Tools::IsNameValid(keyValuePair.first))
 		{
-			PP_COUT_SYNTAX_ERROR(lineCounter, "Invalid key name. (\"" << keyValuePair.first << "\") May only contain [a - z][A - Z][0 - 9] and _.");
+			PP_COUT_SYNTAX_ERROR("Invalid key name. (\"" << keyValuePair.first << "\") May only contain [a - z][A - Z][0 - 9] and _.");
+			PP_COUT_HERE();
 			return EResult::InvalidName;
 		}
 
 		if (keyValuePair.second.empty())
 		{
-			PP_COUT_SYNTAX_ERROR(lineCounter, "Empty keys are not allowed");
+			PP_COUT_SYNTAX_ERROR( "Empty keys are not allowed");
+			PP_COUT_HERE();
 			return EResult::ValueEmpty;
 		}
-		auto parsedValue = Value::ParseValue(keyValuePair.second);
+		EResult parseResult;
+		auto parsedValue = Value::ParseValue(keyValuePair.second, &parseResult);
 		if (parsedValue == nullptr)
 		{
-			PP_COUT_SYNTAX_ERROR(lineCounter, "Invalid value");
-			return EResult::InvalidName;
+			PP_COUT_HERE();
+			return parseResult;
 		}
 		parsedValue->m_comments = commentBuffer;
 		commentBuffer.clear();
@@ -968,7 +980,8 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path, bool addition
 		auto valueSetResult = currentSection->SetValue(keyValuePair.first, std::move(parsedValue), false);
 		if (valueSetResult != EResult::Success)
 		{
-			PP_COUT_SYNTAX_ERROR(lineCounter, "Key already present: " << keyValuePair.first);
+			PP_COUT_SYNTAX_ERROR("Key already present: " << keyValuePair.first);
+			PP_COUT_HERE();
 			return valueSetResult;
 		}
 	}
