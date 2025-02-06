@@ -1,4 +1,5 @@
 [game]
+testEmpty = []
 name = "Test Game\nNext Line"
 testTestArg = [["yeah", "new\nline"], ["hallo\ttest\n\\\\"]]
 completionPercentage = 50.000000

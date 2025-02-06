@@ -7,6 +7,7 @@ completionPercentage = 50.0f
 is_completed = false
 testargs = ["this is a \\\"test\"", "this is\n the next line"]
 testTestArg = [["yeah", "new\nline"], ["hallo\ttest\n\\\\"]]
+testEmpty = []
 
 # This section is about
 # the settings of a game window
