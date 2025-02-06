@@ -58,6 +58,7 @@ namespace minipp
 		KeyValuePairNotInSection		= -23,
 		ExpectedKeyValuePair			= -24,
 		KeyEmpty						= -25,
+		MissingQuote					= -26,
 
 		/* OK Codes */
 		Success							= +1,
@@ -335,19 +336,21 @@ namespace minipp
 
 std::unique_ptr<minipp::MiniPPFile::Value> minipp::MiniPPFile::Value::ParseValue(std::string value, EResult* result)
 {
+#define RETURN_NULLPTR_WITH_RESULT(r) { if (result != nullptr) *result = r; return nullptr; }
+
 	char valueFirstChar = value.front();
 	char valueLastChar = value.back();
 	if (valueFirstChar == '"')
 	{
 		if (valueLastChar != '"')
-			return nullptr;
+			RETURN_NULLPTR_WITH_RESULT(EResult::MissingQuote);
 
 		// is string
 		value = value.substr(1, value.size() - 2);
 		auto strValue = std::make_unique<Values::StringValue>();
 		auto parseResult = strValue->Parse(value);
 		if (!IsResultOk(parseResult))
-			return nullptr;
+			RETURN_NULLPTR_WITH_RESULT(parseResult);
 
 		return strValue;
 	}
@@ -356,7 +359,7 @@ std::unique_ptr<minipp::MiniPPFile::Value> minipp::MiniPPFile::Value::ParseValue
 		auto boolValue = std::make_unique<Values::BooleanValue>();
 		auto parseResult = boolValue->Parse(value);
 		if (!IsResultOk(parseResult))
-			return nullptr;
+			RETURN_NULLPTR_WITH_RESULT(parseResult);
 
 		return boolValue;
 	}
@@ -365,7 +368,7 @@ std::unique_ptr<minipp::MiniPPFile::Value> minipp::MiniPPFile::Value::ParseValue
 		auto floatValue = std::make_unique<Values::FloatValue>();
 		auto parseResult = floatValue->Parse(value);
 		if (!IsResultOk(parseResult))
-			return nullptr;
+			RETURN_NULLPTR_WITH_RESULT(parseResult);
 
 		return floatValue;
 	}
@@ -374,7 +377,7 @@ std::unique_ptr<minipp::MiniPPFile::Value> minipp::MiniPPFile::Value::ParseValue
 		auto arrayValue = std::make_unique<Values::ArrayValue>();
 		auto parseResult = arrayValue->Parse(value);
 		if (!IsResultOk(parseResult))
-			return nullptr;
+			RETURN_NULLPTR_WITH_RESULT(parseResult);
 
 		return arrayValue;
 	}
@@ -383,7 +386,7 @@ std::unique_ptr<minipp::MiniPPFile::Value> minipp::MiniPPFile::Value::ParseValue
 		auto intValue = std::make_unique<Values::IntValue>();
 		auto parseResult = intValue->Parse(value);
 		if (!IsResultOk(parseResult))
-			return nullptr;
+			RETURN_NULLPTR_WITH_RESULT(parseResult);
 
 		return intValue;
 	}
