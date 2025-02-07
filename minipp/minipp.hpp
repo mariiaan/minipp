@@ -272,7 +272,10 @@ namespace minipp
 				ValueDataType* value = nullptr;
 				if (GetValue(key, &value) != EResult::Success)
 					return defaultValue;
-				return value->GetValue();
+				auto casted = dynamic_cast<ValueDataType*>(value);
+				if (casted == nullptr)
+					return defaultValue;
+				return casted->GetValue();
 			}
 
 		public:

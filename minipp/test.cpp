@@ -10,7 +10,7 @@ int main()
 	MiniPPFile file;
 	result = file.Parse("test.mini");
 
-	auto& root = file.GetRoot();
+ 	auto& root = file.GetRoot();
 
 	MiniPPFile::Section* gameSection = nullptr;
 	result = root.GetSubSection("game", &gameSection);

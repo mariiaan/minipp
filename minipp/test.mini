@@ -1,6 +1,6 @@
 [game]
 name = "Test Game\nNext Line"
-ver sion = "1.0.0"
+version = "1.0.0"
 year = 2025
 completionPercentage = 50.0f
 # Should only be true if completionPercentage is 100
