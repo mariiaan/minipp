@@ -294,7 +294,9 @@ namespace minipp
 
 	public:
 		EResult Parse(const std::string& path, bool additional = false) noexcept;
+		EResult Parse(std::ifstream& ifs, bool additional = false) noexcept;
 		EResult Write(const std::string& path) const noexcept;
+		EResult Write(std::ofstream& ofs) const noexcept;
 
 	public:
 		const Section& GetRoot() const noexcept { return m_rootSection; }
@@ -853,6 +855,13 @@ minipp::EResult minipp::MiniPPFile::WriteSection(const Section* section, std::of
 
 minipp::EResult minipp::MiniPPFile::Parse(const std::string& path, bool additional) noexcept
 {
+	std::ifstream ifs;
+	ifs.open(path);
+	return Parse(ifs, additional);
+}
+
+minipp::EResult minipp::MiniPPFile::Parse(std::ifstream& ifs, bool additional) noexcept
+{
 #define PP_COUT_HERE() PP_COUT_SYNTAX_ERROR_LINE(lineCounter, currentLine << " <- HERE");
 	if (!additional)
 	{
@@ -861,8 +870,6 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path, bool addition
 		m_rootSection.m_subSections.clear();
 	}
 
-	std::ifstream ifs;
-	ifs.open(path);
 	if (!ifs.is_open())
 		return EResult::FileIOError;
 
@@ -966,7 +973,7 @@ minipp::EResult minipp::MiniPPFile::Parse(const std::string& path, bool addition
 
 		if (keyValuePair.second.empty())
 		{
-			PP_COUT_SYNTAX_ERROR( "Empty keys are not allowed");
+			PP_COUT_SYNTAX_ERROR("Empty keys are not allowed");
 			PP_COUT_HERE();
 			return EResult::ValueEmpty;
 		}
@@ -996,6 +1003,12 @@ minipp::EResult minipp::MiniPPFile::Write(const std::string& path) const noexcep
 {
 	std::ofstream ofs;
 	ofs.open(path);
+
+	return Write(ofs);
+}
+
+minipp::EResult minipp::MiniPPFile::Write(std::ofstream& ofs) const noexcept
+{
 	if (!ofs.is_open())
 		return EResult::FileIOError;
 
