@@ -608,7 +608,7 @@ minipp::EResult minipp::MiniPPFile::Values::FloatValue::Parse(const std::string&
 
 minipp::EResult minipp::MiniPPFile::Values::FloatValue::ToString(std::string& destination) const noexcept
 {
-	destination = std::to_string(m_value);
+	destination = std::to_string(m_value) + "f";
 	return EResult::Success;
 }
 
