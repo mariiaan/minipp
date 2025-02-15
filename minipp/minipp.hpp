@@ -187,6 +187,13 @@ namespace minipp
 						return nullptr;
 					return m_values[index];
 				}
+
+				const Value* operator[](size_t index) const noexcept
+				{
+					if (index >= m_values.size())
+						return nullptr;
+					return m_values[index];
+				}
 			};
 		};
 	   
